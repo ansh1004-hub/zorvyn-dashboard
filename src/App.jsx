@@ -67,7 +67,11 @@ function App() {
           {activeTab === "overview" ? (
             <Overview summary={summary} transactions={transactions} />
           ) : (
-            <Transactions transactions={transactions} role={role} />
+            <Transactions
+              transactions={transactions}
+              setTransactions={setTransactions}
+              role={role}
+            />
           )}
         </div>
       </main>
