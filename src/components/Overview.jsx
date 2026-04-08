@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useContext } from "react";
 import {
   LineChart,
   Line,
@@ -12,12 +12,16 @@ import {
   Cell,
   Legend,
 } from "recharts";
-import { DollarSign, TrendingUp, TrendingDown } from "lucide-react";
+import { DollarSign, TrendingUp, TrendingDown, Lightbulb } from "lucide-react";
+import { TransactionContext } from "../context/TransactionContext";
 
 const COLORS = ["#4f46e5", "#10b981", "#f59e0b", "#ef4444", "#8b5cf6"];
 
-const Overview = ({ summary, transactions }) => {
-  // 1. Process data for the Expense Pie Chart (Grouping by Category)
+const Overview = () => {
+  // Grab data directly from the Context Brain (No props needed!)
+  const { summary, transactions } = useContext(TransactionContext);
+
+  // Process data for the Expense Pie Chart
   const expenseData = transactions
     .filter((t) => t.type === "Expense")
     .reduce((acc, curr) => {
@@ -30,12 +34,19 @@ const Overview = ({ summary, transactions }) => {
       return acc;
     }, []);
 
-  // 2. Process data for the Line Chart
+  // Process data for the Line Chart
   const timelineData = transactions.map((t) => ({
-    date: t.date.split("-").slice(1).join("/"), // Format as MM/DD
+    date: t.date.split("-").slice(1).join("/"),
     amount: t.amount,
     type: t.type,
   }));
+
+  // CALCULATE QUICK INSIGHTS
+  const topExpense = [...expenseData].sort((a, b) => b.value - a.value)[0];
+  const savingsRate =
+    summary.income > 0
+      ? ((summary.totalBalance / summary.income) * 100).toFixed(1)
+      : 0;
 
   return (
     <div className="space-y-6">
@@ -78,9 +89,38 @@ const Overview = ({ summary, transactions }) => {
         </div>
       </div>
 
+      {/* KEY INSIGHTS BANNER */}
+      <div className="bg-indigo-50 border border-indigo-100 rounded-xl p-5 flex items-start space-x-4 shadow-sm">
+        <div className="p-2 bg-indigo-100 text-indigo-600 rounded-lg shrink-0 mt-0.5">
+          <Lightbulb size={20} />
+        </div>
+        <div>
+          <h4 className="text-sm font-bold text-indigo-900 mb-1">
+            AI Data Insights
+          </h4>
+          <ul className="text-sm text-indigo-800 space-y-1">
+            {topExpense && (
+              <li>
+                • Your highest spending category is{" "}
+                <span className="font-semibold underline decoration-indigo-300 underline-offset-2">
+                  {topExpense.name}
+                </span>{" "}
+                at <span className="font-semibold">${topExpense.value}</span>.
+              </li>
+            )}
+            <li>
+              • You are currently saving{" "}
+              <span className="font-semibold underline decoration-indigo-300 underline-offset-2">
+                {savingsRate}%
+              </span>{" "}
+              of your total income.
+            </li>
+          </ul>
+        </div>
+      </div>
+
       {/* CHARTS SECTION */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* LINE CHART */}
         <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm lg:col-span-2">
           <h3 className="text-lg font-semibold text-gray-800 mb-4">
             Cash Flow Trend
@@ -127,7 +167,6 @@ const Overview = ({ summary, transactions }) => {
           </div>
         </div>
 
-        {/* PIE CHART */}
         <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
           <h3 className="text-lg font-semibold text-gray-800 mb-4">
             Expenses by Category

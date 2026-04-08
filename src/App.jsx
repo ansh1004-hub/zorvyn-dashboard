@@ -1,20 +1,18 @@
-import React, { useState } from "react";
-import { initialTransactions, calculateSummary } from "./data/mockData";
+import React, { useState, useContext } from "react";
 import { LayoutDashboard, ArrowLeftRight } from "lucide-react";
 import Overview from "./components/Overview";
 import Transactions from "./components/Transactions";
+import { TransactionContext } from "./context/TransactionContext";
 
 function App() {
-  // Global State
-  const [transactions, setTransactions] = useState(initialTransactions);
-  const [role, setRole] = useState("Viewer"); // 'Viewer' or 'Admin'
-  const [activeTab, setActiveTab] = useState("overview"); // 'overview' or 'transactions'
+  const [activeTab, setActiveTab] = useState("overview"); // Only local UI state left!
 
-  const summary = calculateSummary(transactions);
+  // Plug into the Context just to get the Role for the top header
+  const { role, setRole } = useContext(TransactionContext);
 
   return (
     <div className="flex h-screen overflow-hidden bg-gray-100 font-sans">
-      {/* SIDEBAR NAVIGATION */}
+      {/* SIDEBAR */}
       <aside className="w-64 bg-white border-r border-gray-200 shadow-sm hidden md:flex flex-col">
         <div className="p-6 border-b border-gray-200">
           <h1 className="text-2xl font-bold text-indigo-600">ZorvynDash</h1>
@@ -24,28 +22,26 @@ function App() {
             onClick={() => setActiveTab("overview")}
             className={`w-full flex items-center space-x-3 px-4 py-3 rounded-lg transition-colors ${activeTab === "overview" ? "bg-indigo-50 text-indigo-700" : "text-gray-600 hover:bg-gray-50"}`}
           >
-            <LayoutDashboard size={20} />
+            <LayoutDashboard size={20} />{" "}
             <span className="font-medium">Overview</span>
           </button>
           <button
             onClick={() => setActiveTab("transactions")}
             className={`w-full flex items-center space-x-3 px-4 py-3 rounded-lg transition-colors ${activeTab === "transactions" ? "bg-indigo-50 text-indigo-700" : "text-gray-600 hover:bg-gray-50"}`}
           >
-            <ArrowLeftRight size={20} />
+            <ArrowLeftRight size={20} />{" "}
             <span className="font-medium">Transactions</span>
           </button>
         </nav>
       </aside>
 
-      {/* MAIN CONTENT AREA */}
+      {/* MAIN CONTENT */}
       <main className="flex-1 flex flex-col overflow-y-auto">
-        {/* TOP HEADER */}
+        {/* HEADER */}
         <header className="bg-white border-b border-gray-200 px-8 py-4 flex items-center justify-between sticky top-0 z-10 shadow-sm">
           <h2 className="text-xl font-semibold text-gray-800 capitalize">
             {activeTab}
           </h2>
-
-          {/* Role Toggle Simulation */}
           <div className="flex items-center space-x-4">
             <span className="text-sm font-medium text-gray-500">Role:</span>
             <select
@@ -62,17 +58,9 @@ function App() {
           </div>
         </header>
 
-        {/* DASHBOARD CONTENT PLUG-IN POINT */}
+        {/* DASHBOARD CONTENT - Look how clean this is now! No more props! */}
         <div className="p-8">
-          {activeTab === "overview" ? (
-            <Overview summary={summary} transactions={transactions} />
-          ) : (
-            <Transactions
-              transactions={transactions}
-              setTransactions={setTransactions}
-              role={role}
-            />
-          )}
+          {activeTab === "overview" ? <Overview /> : <Transactions />}
         </div>
       </main>
     </div>

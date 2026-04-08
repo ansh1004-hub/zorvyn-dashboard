@@ -1,11 +1,19 @@
-import React, { useState } from "react";
-import { Search, Plus, Trash2, X } from "lucide-react";
+import React, { useState, useContext } from "react";
+import { Search, Plus, Trash2, X, ArrowUpDown } from "lucide-react";
+import { TransactionContext } from "../context/TransactionContext";
 
-const Transactions = ({ transactions, setTransactions, role }) => {
+const Transactions = () => {
+  // Grab state and updater functions from the Context Brain
+  const { transactions, setTransactions, role } =
+    useContext(TransactionContext);
+
+  // Local UI State
   const [searchTerm, setSearchTerm] = useState("");
   const [filterType, setFilterType] = useState("All");
-
-  // Modal State
+  const [sortConfig, setSortConfig] = useState({
+    key: "date",
+    direction: "desc",
+  });
   const [showModal, setShowModal] = useState(false);
   const [formData, setFormData] = useState({
     date: "",
@@ -15,8 +23,8 @@ const Transactions = ({ transactions, setTransactions, role }) => {
     type: "Expense",
   });
 
-  // Filtering Logic
-  const filteredTransactions = transactions.filter((t) => {
+  // 1. Filtering Logic
+  let processedTransactions = transactions.filter((t) => {
     const matchesSearch =
       t.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
       t.category.toLowerCase().includes(searchTerm.toLowerCase());
@@ -24,19 +32,35 @@ const Transactions = ({ transactions, setTransactions, role }) => {
     return matchesSearch && matchesType;
   });
 
-  // Form Submission Logic
+  // 2. Sorting Logic
+  processedTransactions.sort((a, b) => {
+    if (a[sortConfig.key] < b[sortConfig.key]) {
+      return sortConfig.direction === "asc" ? -1 : 1;
+    }
+    if (a[sortConfig.key] > b[sortConfig.key]) {
+      return sortConfig.direction === "asc" ? 1 : -1;
+    }
+    return 0;
+  });
+
+  // Handle column header clicks
+  const requestSort = (key) => {
+    let direction = "asc";
+    if (sortConfig.key === key && sortConfig.direction === "asc") {
+      direction = "desc";
+    }
+    setSortConfig({ key, direction });
+  };
+
+  // Form Submission
   const handleAddTransaction = (e) => {
     e.preventDefault();
     const newTx = {
-      id: Date.now().toString(), // Generate a fake unique ID
+      id: Date.now().toString(),
       ...formData,
-      amount: parseFloat(formData.amount) || 0, // Ensure amount is a number
+      amount: parseFloat(formData.amount) || 0,
     };
-
-    // Put the new transaction at the very top of the list
     setTransactions([newTx, ...transactions]);
-
-    // Close modal and reset form
     setShowModal(false);
     setFormData({
       date: "",
@@ -47,14 +71,14 @@ const Transactions = ({ transactions, setTransactions, role }) => {
     });
   };
 
-  // Delete Logic
+  // Delete Transaction
   const handleDelete = (idToDelete) => {
     setTransactions(transactions.filter((t) => t.id !== idToDelete));
   };
 
   return (
     <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden relative">
-      {/* HEADER & CONTROLS */}
+      {/* HEADER CONTROLS */}
       <div className="p-6 border-b border-gray-200 flex flex-col md:flex-row md:items-center justify-between gap-4">
         <h3 className="text-lg font-semibold text-gray-800">
           Recent Transactions
@@ -102,18 +126,47 @@ const Transactions = ({ transactions, setTransactions, role }) => {
         <table className="w-full text-left border-collapse">
           <thead>
             <tr className="bg-gray-50 border-b border-gray-200 text-sm text-gray-500">
-              <th className="py-3 px-6 font-medium">Date</th>
-              <th className="py-3 px-6 font-medium">Description</th>
-              <th className="py-3 px-6 font-medium">Category</th>
-              <th className="py-3 px-6 font-medium">Amount</th>
+              <th
+                className="py-3 px-6 font-medium cursor-pointer hover:bg-gray-100 transition-colors"
+                onClick={() => requestSort("date")}
+              >
+                <div className="flex items-center gap-1">
+                  Date <ArrowUpDown size={14} className="text-gray-400" />
+                </div>
+              </th>
+              <th
+                className="py-3 px-6 font-medium cursor-pointer hover:bg-gray-100 transition-colors"
+                onClick={() => requestSort("description")}
+              >
+                <div className="flex items-center gap-1">
+                  Description{" "}
+                  <ArrowUpDown size={14} className="text-gray-400" />
+                </div>
+              </th>
+              <th
+                className="py-3 px-6 font-medium cursor-pointer hover:bg-gray-100 transition-colors"
+                onClick={() => requestSort("category")}
+              >
+                <div className="flex items-center gap-1">
+                  Category <ArrowUpDown size={14} className="text-gray-400" />
+                </div>
+              </th>
+              <th
+                className="py-3 px-6 font-medium cursor-pointer hover:bg-gray-100 transition-colors"
+                onClick={() => requestSort("amount")}
+              >
+                <div className="flex items-center gap-1">
+                  Amount <ArrowUpDown size={14} className="text-gray-400" />
+                </div>
+              </th>
               {role === "Admin" && (
                 <th className="py-3 px-6 font-medium text-right">Actions</th>
               )}
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-200">
-            {filteredTransactions.length > 0 ? (
-              filteredTransactions.map((t) => (
+            {processedTransactions.length > 0 ? (
+              processedTransactions.map((t) => (
                 <tr key={t.id} className="hover:bg-gray-50 transition-colors">
                   <td className="py-4 px-6 text-sm text-gray-500">{t.date}</td>
                   <td className="py-4 px-6 text-sm font-medium text-gray-900">
@@ -157,7 +210,7 @@ const Transactions = ({ transactions, setTransactions, role }) => {
         </table>
       </div>
 
-      {/* ADD TRANSACTION MODAL (Only shows if showModal is true) */}
+      {/* ADD TRANSACTION MODAL */}
       {showModal && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-xl shadow-xl w-full max-w-md overflow-hidden">
