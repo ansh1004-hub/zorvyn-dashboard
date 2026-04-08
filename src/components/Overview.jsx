@@ -18,7 +18,12 @@ import { TransactionContext } from "../context/TransactionContext";
 const COLORS = ["#4f46e5", "#10b981", "#f59e0b", "#ef4444", "#8b5cf6"];
 
 const Overview = () => {
-  const { summary, transactions, isDarkMode } = useContext(TransactionContext);
+  // CRITICAL UPDATE: We pull 'displayedTransactions' and rename it to 'transactions' locally
+  const {
+    summary,
+    displayedTransactions: transactions,
+    isDarkMode,
+  } = useContext(TransactionContext);
 
   const expenseData = transactions
     .filter((t) => t.type === "Expense")
@@ -44,7 +49,6 @@ const Overview = () => {
       ? ((summary.totalBalance / summary.income) * 100).toFixed(1)
       : 0;
 
-  // Change chart text color based on Dark Mode
   const chartTextColor = isDarkMode ? "#9ca3af" : "#6b7280";
   const gridColor = isDarkMode ? "#374151" : "#e5e7eb";
 

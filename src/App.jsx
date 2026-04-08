@@ -7,13 +7,28 @@ import { TransactionContext } from "./context/TransactionContext";
 
 function App() {
   const [activeTab, setActiveTab] = useState("overview");
-  const { role, setRole, isDarkMode, toggleDarkMode } =
-    useContext(TransactionContext);
+  const {
+    role,
+    setRole,
+    isDarkMode,
+    toggleDarkMode,
+    monthFilter,
+    setMonthFilter,
+    uniqueMonths,
+  } = useContext(TransactionContext);
+
+  // Helper function to turn "2023-10" into a pretty "Oct 2023" string
+  const formatMonth = (ym) => {
+    if (ym === "All") return "All Time";
+    const [year, month] = ym.split("-");
+    const date = new Date(year, month - 1);
+    return date.toLocaleString("default", { month: "short", year: "numeric" });
+  };
 
   return (
     <div className="flex h-screen overflow-hidden bg-gray-100 dark:bg-gray-900 font-sans transition-colors duration-200">
-      <Toaster position="bottom-right" />{" "}
-      {/* The Toast Notification Container */}
+      <Toaster position="bottom-right" />
+
       {/* SIDEBAR */}
       <aside className="w-64 bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 shadow-sm hidden md:flex flex-col transition-colors duration-200">
         <div className="p-6 border-b border-gray-200 dark:border-gray-700">
@@ -38,16 +53,16 @@ function App() {
           </button>
         </nav>
       </aside>
+
       {/* MAIN CONTENT */}
       <main className="flex-1 flex flex-col overflow-y-auto">
         {/* HEADER */}
-        <header className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-8 py-4 flex items-center justify-between sticky top-0 z-10 shadow-sm transition-colors duration-200">
+        <header className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-8 py-4 flex flex-wrap gap-4 items-center justify-between sticky top-0 z-10 shadow-sm transition-colors duration-200">
           <h2 className="text-xl font-semibold text-gray-800 dark:text-white capitalize">
             {activeTab}
           </h2>
 
           <div className="flex items-center space-x-6">
-            {/* DARK MODE TOGGLE */}
             <button
               onClick={toggleDarkMode}
               className="text-gray-500 dark:text-gray-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors"
@@ -55,8 +70,26 @@ function App() {
               {isDarkMode ? <Sun size={20} /> : <Moon size={20} />}
             </button>
 
-            <div className="flex items-center space-x-3">
-              <span className="text-sm font-medium text-gray-500 dark:text-gray-400">
+            {/* NEW: TIME PERIOD DROPDOWN */}
+            <div className="flex items-center space-x-2">
+              <span className="hidden sm:inline text-sm font-medium text-gray-500 dark:text-gray-400">
+                Period:
+              </span>
+              <select
+                value={monthFilter}
+                onChange={(e) => setMonthFilter(e.target.value)}
+                className="bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white text-sm rounded-lg focus:ring-indigo-500 outline-none p-2 cursor-pointer"
+              >
+                {uniqueMonths.map((m) => (
+                  <option key={m} value={m}>
+                    {formatMonth(m)}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div className="flex items-center space-x-2">
+              <span className="hidden sm:inline text-sm font-medium text-gray-500 dark:text-gray-400">
                 Role:
               </span>
               <select
@@ -67,7 +100,7 @@ function App() {
                 <option value="Viewer">Viewer</option>
                 <option value="Admin">Admin</option>
               </select>
-              <div className="h-9 w-9 rounded-full bg-indigo-100 dark:bg-indigo-900/50 flex items-center justify-center text-indigo-700 dark:text-indigo-300 font-bold border border-indigo-200 dark:border-indigo-800">
+              <div className="hidden sm:flex h-9 w-9 rounded-full bg-indigo-100 dark:bg-indigo-900/50 items-center justify-center text-indigo-700 dark:text-indigo-300 font-bold border border-indigo-200 dark:border-indigo-800">
                 {role.charAt(0)}
               </div>
             </div>

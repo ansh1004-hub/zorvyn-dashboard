@@ -14,8 +14,15 @@ import { TransactionContext } from "../context/TransactionContext";
 import toast from "react-hot-toast";
 
 const Transactions = () => {
-  const { transactions, setTransactions, editTransaction, role, isDarkMode } =
-    useContext(TransactionContext);
+  // CRITICAL UPDATE: Pulling both raw 'transactions' and filtered 'displayedTransactions'
+  const {
+    transactions,
+    displayedTransactions,
+    setTransactions,
+    editTransaction,
+    role,
+    isDarkMode,
+  } = useContext(TransactionContext);
 
   const [searchTerm, setSearchTerm] = useState("");
   const [filterType, setFilterType] = useState("All");
@@ -26,7 +33,7 @@ const Transactions = () => {
 
   // Modal & Edit State
   const [showModal, setShowModal] = useState(false);
-  const [editingId, setEditingId] = useState(null); // Tracks if we are adding or editing
+  const [editingId, setEditingId] = useState(null);
   const [formData, setFormData] = useState({
     date: "",
     description: "",
@@ -39,8 +46,8 @@ const Transactions = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 6;
 
-  // 1. Filter Logic
-  let processedTransactions = transactions.filter((t) => {
+  // 1. Filter Logic (Uses displayedTransactions now!)
+  let processedTransactions = displayedTransactions.filter((t) => {
     const matchesSearch =
       t.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
       t.category.toLowerCase().includes(searchTerm.toLowerCase());
@@ -93,7 +100,6 @@ const Transactions = () => {
     link.click();
     document.body.removeChild(link);
 
-    // Trigger Success Toast
     toast.success("CSV Exported Successfully!", {
       style: {
         background: isDarkMode ? "#374151" : "#fff",
@@ -102,13 +108,10 @@ const Transactions = () => {
     });
   };
 
-  // Form Submission (Handles both Add and Edit)
+  // Form Submission
   const handleSaveTransaction = (e) => {
     e.preventDefault();
-    const payload = {
-      ...formData,
-      amount: parseFloat(formData.amount) || 0,
-    };
+    const payload = { ...formData, amount: parseFloat(formData.amount) || 0 };
 
     if (editingId) {
       editTransaction({ id: editingId, ...payload });
@@ -307,7 +310,7 @@ const Transactions = () => {
                   colSpan={role === "Admin" ? 5 : 4}
                   className="py-12 text-center text-gray-500 dark:text-gray-400"
                 >
-                  No transactions found.
+                  No transactions found for this period.
                 </td>
               </tr>
             )}

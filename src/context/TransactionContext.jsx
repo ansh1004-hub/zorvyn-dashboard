@@ -4,7 +4,6 @@ import { initialTransactions, calculateSummary } from "../data/mockData";
 export const TransactionContext = createContext();
 
 export const TransactionProvider = ({ children }) => {
-  // 1. DATA PERSISTENCE (LocalStorage)
   const [transactions, setTransactions] = useState(() => {
     const saved = localStorage.getItem("zorvyn_transactions");
     if (saved) return JSON.parse(saved);
@@ -12,18 +11,17 @@ export const TransactionProvider = ({ children }) => {
   });
 
   const [role, setRole] = useState("Viewer");
+  const [isDarkMode, setIsDarkMode] = useState(
+    () => localStorage.getItem("theme") === "dark",
+  );
 
-  // 2. DARK MODE STATE (Persistence)
-  const [isDarkMode, setIsDarkMode] = useState(() => {
-    return localStorage.getItem("theme") === "dark";
-  });
+  // NEW: Global Month Filter State
+  const [monthFilter, setMonthFilter] = useState("All");
 
-  // Save transactions to LocalStorage whenever they change
   useEffect(() => {
     localStorage.setItem("zorvyn_transactions", JSON.stringify(transactions));
   }, [transactions]);
 
-  // Apply Dark Mode class to the HTML document
   useEffect(() => {
     if (isDarkMode) {
       document.documentElement.classList.add("dark");
@@ -36,19 +34,32 @@ export const TransactionProvider = ({ children }) => {
 
   const toggleDarkMode = () => setIsDarkMode(!isDarkMode);
 
-  // Edit Transaction Helper
   const editTransaction = (updatedTx) => {
     setTransactions(
       transactions.map((t) => (t.id === updatedTx.id ? updatedTx : t)),
     );
   };
 
-  const summary = calculateSummary(transactions);
+  // NEW: Extract unique months from all transactions (e.g., "2023-10")
+  const uniqueMonths = [
+    "All",
+    ...new Set(transactions.map((t) => t.date.substring(0, 7))),
+  ].sort((a, b) => b.localeCompare(a));
+
+  // NEW: Filter data based on the selected month
+  const displayedTransactions =
+    monthFilter === "All"
+      ? transactions
+      : transactions.filter((t) => t.date.startsWith(monthFilter));
+
+  // Calculate summary based ONLY on the filtered month!
+  const summary = calculateSummary(displayedTransactions);
 
   return (
     <TransactionContext.Provider
       value={{
-        transactions,
+        transactions, // Raw data for adding/editing
+        displayedTransactions, // Filtered data for charts/tables
         setTransactions,
         editTransaction,
         summary,
@@ -56,6 +67,9 @@ export const TransactionProvider = ({ children }) => {
         setRole,
         isDarkMode,
         toggleDarkMode,
+        monthFilter,
+        setMonthFilter,
+        uniqueMonths, // Exporting new filter states
       }}
     >
       {children}
